@@ -1,0 +1,8 @@
+version: "3.0"
+services:
+  app:
+    volumes:
+      - ./app:/app
+    build: ./config
+    command: python src.py
+    tty: true

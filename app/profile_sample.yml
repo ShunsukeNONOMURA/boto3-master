@@ -1,0 +1,4 @@
+profile_name: profile_name
+aws_access_key_id: hogehoge
+aws_secret_access_key: hugahuga
+region_name: ap-northeast-1

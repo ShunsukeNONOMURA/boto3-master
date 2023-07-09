@@ -1,0 +1,11 @@
+profiles:
+  - 
+    profile_name: profile_name_1
+    aws_access_key_id: hogehoge
+    aws_secret_access_key: hugahuga
+    region_name: ap-northeast-1
+  -
+    profile_name: profile_name_2
+    aws_access_key_id: hogehoge
+    aws_secret_access_key: hugahuga
+    region_name: ap-northeast-1
