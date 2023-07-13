@@ -47,6 +47,11 @@ class Boto3AppService:
         """
         pprint(Boto3Driver.create_driver_from_profile_yaml(path_profile_yaml).create_s3_url(bucket_name, key, file_name))
 
+    def export_ssm_parameters_to_csv(self, path_profile_yaml='./profile.yml'):
+        params = Boto3Driver.create_driver_from_profile_yaml(path_profile_yaml).get_ssm_parameters()
+        params.export_df_csv(f'./out/ssm.csv')
+        # pprint(params.df)
+
     def create_log_events(
             self, 
             log_group_name,
@@ -127,7 +132,7 @@ class Boto3AppService:
         for profile_name, monthly_cost in zip(profile_names, monthly_costs):
             name_profile = profile_name
             name_bar_png=f'{name_profile}.png'
-            monthly_cost.export_def_csv(f'{path_report_resource_root}/{name_profile}.csv')
+            monthly_cost.export_df_csv(f'{path_report_resource_root}/{name_profile}.csv')
             monthly_cost.export_df_bar_png(f'{path_report_resource_root}/{name_bar_png}')
             text_md += f'## {name_profile}\n'
             text_md += monthly_cost.cost_md(

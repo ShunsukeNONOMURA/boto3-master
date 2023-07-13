@@ -71,7 +71,7 @@ class MonthlyCost():
     def service_count(self):
         return self.df.groupby('Service')['Cost'].sum().shape[0]
     
-    def export_def_csv(self, path):
+    def export_df_csv(self, path):
         self.df.to_csv(path, index = False)
 
     def export_df_bar_png(self, path):
@@ -146,6 +146,12 @@ class MonthlyCost():
         with open(path, mode='w') as f:
             f.write(self.cost_md(section, path_df_bar_png))
 
+class SSMParameters():
+    def __init__(self, data):
+        self.df = pd.DataFrame(data)
+    def export_df_csv(self, path):
+        self.df.to_csv(path, index = False)
+
 class Boto3Driver():
     def __init__(self, aws_access_key_id, aws_secret_access_key, region_name):
         self.aws_access_key_id = aws_access_key_id
@@ -219,6 +225,52 @@ class Boto3Driver():
         client = self.session().client('ec2')
         response = client.describe_instances()
         return response
+    
+    def get_ssm_parameters(self):
+        """
+        利用可能なもの
+        https://docs.aws.amazon.com/cli/latest/reference/ssm/describe-parameters.html
+        https://docs.aws.amazon.com/cli/latest/reference/ssm/get-parameters.html
+        https://docs.aws.amazon.com/cli/latest/reference/ssm/get-parameter.html
+        https://docs.aws.amazon.com/cli/latest/reference/ssm/get-parameters-by-path.html
+        """
+        client = self.session().client('ssm')
+        args = {}
+        next_token = None
+        parameters_all=[]
+        while True:
+            if next_token is not None:
+                args["NextToken"] = next_token
+            response = client.describe_parameters(**args)
+            
+            next_token = response['NextToken'] if 'NextToken' in response else None
+            parameters = response['Parameters']
+
+            parameters_g = client.get_parameters(
+                Names=[p['Name'] for p in parameters],
+                WithDecryption=True
+            )['Parameters']
+
+            for p, p_g in zip(parameters, parameters_g):
+                if p['Name'] == p_g['Name']:
+                    p['Value'] = p_g['Value']
+                    p['ARN'] = p_g['ARN']
+                else:
+                    print('Name Unmatch')
+
+            # pprint(parameters[0])
+            # pprint(parameters_g[0])
+
+            parameters_all += parameters
+
+            # 最新のログイベントを取得するまでループする
+            print(f'件数: {len(parameters)}')
+            # print(next_token)
+
+            if len(parameters) == 0 or next_token is None:
+                break
+
+        return SSMParameters(parameters_all)
     
     def filter_log_events(
             self, 
