@@ -9,6 +9,8 @@ from datetime import date, datetime, timedelta
 
 from pprint import pprint
 
+from pyathena import connect
+
 class MonthlyCost():
     def __init__(
             self,
@@ -153,10 +155,11 @@ class SSMParameters():
         self.df.to_csv(path, index = False)
 
 class Boto3Driver():
-    def __init__(self, aws_access_key_id, aws_secret_access_key, region_name):
+    def __init__(self, aws_access_key_id, aws_secret_access_key, region_name, session_token=''):
         self.aws_access_key_id = aws_access_key_id
         self.aws_secret_access_key = aws_secret_access_key
         self.region_name = region_name
+        self.session_token = session_token
 
     @staticmethod
     def create_driver_from_profile_yaml(path_profile_yaml):
@@ -167,12 +170,31 @@ class Boto3Driver():
             aws_secret_access_key = profile['aws_secret_access_key'], 
             region_name = profile['region_name']
         )
+    
+    def create_driver_from_profile_yaml_assume_role(self, path_profile_yaml):
+        # 現在のIAMがAssumeRoleできることが前提
+        with open(path_profile_yaml) as file:
+            profile = yaml.safe_load(file)
+        # boto3_driver = Boto3Driver.create_driver_from_profile_yaml(path_profile_yaml) # Assue Roleする側のIAM
+        client = self.session().client('sts')
+        credentials = client.assume_role(
+            RoleArn=profile['assume_role_arn'],
+            RoleSessionName=profile['assume_role_session_name'],
+            DurationSeconds=profile['assume_duration_seconds'],
+        )['Credentials']
+        return Boto3Driver( # Assue Roleによって払い出した認証情報
+            aws_access_key_id = credentials['AccessKeyId'],
+            aws_secret_access_key = credentials['SecretAccessKey'], 
+            region_name = profile['region_name'],
+            session_token = credentials['SessionToken']
+        )
 
     def session(self):
         return boto3.Session(
             aws_access_key_id = self.aws_access_key_id,
             aws_secret_access_key = self.aws_secret_access_key,
             region_name = self.region_name,
+            aws_session_token=self.session_token,
         )
     
     def get_s3_bucket_list(self):
@@ -402,3 +424,21 @@ class Boto3Driver():
         df = pd.DataFrame(data)
         result['df'] =  df.sort_values(by=['Month', 'Cost'], ascending=[False, False])
         return MonthlyCost(**result)
+
+    def athena_cursor(
+        self,
+        s3_staging_dir,
+        work_group=None,
+    ):
+        current_credentials = self.session().get_credentials().get_frozen_credentials()
+        args = {
+            'aws_access_key_id': current_credentials.access_key,
+            'aws_secret_access_key': current_credentials.secret_key,
+            'aws_session_token': current_credentials.token,
+            's3_staging_dir': s3_staging_dir,
+            'region_name': self.region_name,
+        }
+        if work_group is not None:
+            args['work_group'] = work_group
+        cursor = connect(**args).cursor()
+        return cursor

@@ -10,3 +10,12 @@ touch src.py
 # src.pyの中身を作成
 docker compose up
 ```
+
+## 試した機能
+- 月次コスト計算
+- s3一覧
+- pyathena
+
+## 履歴
+- 23/07/29
+    - athena関連追加

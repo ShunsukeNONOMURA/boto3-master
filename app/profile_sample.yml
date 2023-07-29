@@ -2,3 +2,7 @@ profile_name: profile_name
 aws_access_key_id: hogehoge
 aws_secret_access_key: hugahuga
 region_name: ap-northeast-1
+
+role_arn: arn:aws:iam::hogehoge
+role_session_name: sample
+duration_seconds: 60

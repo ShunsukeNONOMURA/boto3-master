@@ -25,5 +25,15 @@ boto3_app_service.create_log_events(
     end_datetime=datetime(2023,7,5,10),
     filter_pattern="pattern",
 )
+boto3_app_service.print_assume_role_pyathena_select(
+    s3_staging_dir='s3://tmp',
+    work_group='workgroup',
+    query='select * from db.table limit 10;'
+)
+boto3_app_service.print_pyathena_select(
+    s3_staging_dir='s3://tmp',
+    work_group='workgroup',
+    query='select * from db.table limit 10;'
+)
 exit(0)
 

@@ -141,3 +141,24 @@ class Boto3AppService:
             )
         with open(path_report, mode='w') as f:
             f.write(text_md)
+
+    def print_assume_role_pyathena_select(self, s3_staging_dir, work_group, query, path_profile_yaml='./profile.yml'):
+        boto3_driver = Boto3Driver.create_driver_from_profile_yaml(path_profile_yaml).create_driver_from_profile_yaml_assume_role(path_profile_yaml)
+        cursor = boto3_driver.athena_cursor(
+            s3_staging_dir=s3_staging_dir,
+            work_group=work_group,
+        )
+        cursor.execute(query)
+        print(cursor.fetchall())
+    
+    def print_pyathena_select(self, s3_staging_dir, work_group, query, path_profile_yaml='./profile.yml'):
+        boto3_driver = Boto3Driver.create_driver_from_profile_yaml(path_profile_yaml)
+        cursor = boto3_driver.athena_cursor(
+            s3_staging_dir=s3_staging_dir,
+            work_group=work_group,
+        )
+        cursor.execute(query)
+        print(cursor.fetchall())
+
+    def sandbox(self, path_profile_yaml='./profile.yml'):
+        return
