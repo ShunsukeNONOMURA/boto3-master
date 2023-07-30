@@ -151,6 +151,7 @@ class Boto3AppService:
         cursor.execute(query)
         print(cursor.fetchall())
     
+    
     def print_pyathena_select(self, s3_staging_dir, work_group, query, path_profile_yaml='./profile.yml'):
         boto3_driver = Boto3Driver.create_driver_from_profile_yaml(path_profile_yaml)
         cursor = boto3_driver.athena_cursor(
@@ -160,5 +161,43 @@ class Boto3AppService:
         cursor.execute(query)
         print(cursor.fetchall())
 
-    def sandbox(self, path_profile_yaml='./profile.yml'):
-        return
+    def print_assume_role_pyathena_pandas(self, s3_staging_dir, work_group, query, path_profile_yaml='./profile.yml'):
+        # PyAthena：PandasCursor
+        # https://qiita.com/katsulang/items/cc388fa4da031dc249bf
+        boto3_driver = Boto3Driver.create_driver_from_profile_yaml(path_profile_yaml).create_driver_from_profile_yaml_assume_role(path_profile_yaml)
+        cursor = boto3_driver.athena_cursor(
+            s3_staging_dir=s3_staging_dir,
+            work_group=work_group,
+        )
+        df = cursor.execute(query).as_pandas()
+        print(df)
+
+    def print_pyathena_pandas(self, s3_staging_dir, work_group, query, path_profile_yaml='./profile.yml'):
+        # PyAthena：PandasCursor
+        from pyathena.pandas.cursor import PandasCursor
+        # https://qiita.com/katsulang/items/cc388fa4da031dc249bf
+        boto3_driver = Boto3Driver.create_driver_from_profile_yaml(path_profile_yaml)
+        cursor = boto3_driver.athena_cursor(
+            s3_staging_dir=s3_staging_dir,
+            work_group=work_group,
+        )
+        df = cursor.execute(query).as_pandas()
+        print(df)
+    
+
+
+    def print_pyathena_sqlalchemy_select(self, s3_staging_dir, work_group, schema_name, path_profile_yaml='./profile.yml'):
+        # https://pypi.org/project/pyathena/#sqlalchemy
+        from sqlalchemy.sql.schema import Table, MetaData
+        from sqlalchemy.orm import sessionmaker
+        boto3_driver = Boto3Driver.create_driver_from_profile_yaml(path_profile_yaml)
+        schema_name = 'athena_test_database'
+        engine = boto3_driver.create_athena_sqlalchemy_engine(schema_name, s3_staging_dir, work_group)
+        Session = sessionmaker(engine)
+
+        with engine.connect() as connection:
+            athena_test_table = Table("athena_test_table", MetaData(), autoload_with=connection)
+        with Session() as session:
+            result = session.query(athena_test_table).limit(5).all()
+            print(result)
+

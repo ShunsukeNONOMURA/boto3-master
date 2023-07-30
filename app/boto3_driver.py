@@ -10,6 +10,9 @@ from datetime import date, datetime, timedelta
 from pprint import pprint
 
 from pyathena import connect
+from pyathena.pandas.cursor import PandasCursor
+from pyathena.pandas.async_cursor import AsyncPandasCursor
+from sqlalchemy.engine import create_engine
 
 class MonthlyCost():
     def __init__(
@@ -437,8 +440,26 @@ class Boto3Driver():
             'aws_session_token': current_credentials.token,
             's3_staging_dir': s3_staging_dir,
             'region_name': self.region_name,
+            'cursor_class': PandasCursor, # pandas利用をデフォルトにする
         }
         if work_group is not None:
             args['work_group'] = work_group
         cursor = connect(**args).cursor()
         return cursor
+    
+    def create_athena_sqlalchemy_engine(
+        self, 
+        schema_name, 
+        s3_staging_dir, 
+        work_group=None):
+        current_credentials = self.session().get_credentials().get_frozen_credentials()
+        conn_str = "awsathena+rest://{aws_access_key_id}:{aws_secret_access_key}@athena.{region_name}.amazonaws.com:443/"\
+           "{schema_name}?s3_staging_dir={s3_staging_dir}"
+        engine = create_engine(conn_str.format(
+            aws_access_key_id=current_credentials.access_key,
+            aws_secret_access_key=current_credentials.secret_key,
+            region_name=self.region_name,
+            work_group=work_group,
+            schema_name=schema_name,
+            s3_staging_dir=s3_staging_dir))
+        return engine
