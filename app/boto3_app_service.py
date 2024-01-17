@@ -201,3 +201,16 @@ class Boto3AppService:
             result = session.query(athena_test_table).limit(5).all()
             print(result)
 
+    def export_resoruce_md(self, path_output_root='./out', path_profile_yaml='./profile.yml'):
+        ec2_instance_list = Boto3Driver.create_driver_from_profile_yaml(path_profile_yaml).get_ec2_instance_list()
+        ec2_instance_df = pd.DataFrame(ec2_instance_list).sort_values('PrivateIpAddress')
+        ec2_instance_md = ec2_instance_df.to_markdown(index=False)
+
+        name_report = f'aws-resource-report.md'
+        path_report= f'{path_output_root}/{name_report}'
+
+        with open(path_report, mode='w') as f:
+            f.write('## ec2 instance\n')
+            f.write(ec2_instance_md)
+        return ''
+

@@ -3,6 +3,7 @@ from boto3_app_service import *
 
 boto3_app_service = Boto3AppService()
 boto3_app_service.pprint_ec2_list()
+boto3_app_service.export_resoruce_md()
 boto3_app_service.pprint_s3_bucket_list()
 boto3_app_service.pprint_s3_object_list(
     bucket_name='bucket_name',

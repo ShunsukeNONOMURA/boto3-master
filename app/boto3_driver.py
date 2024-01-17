@@ -250,6 +250,27 @@ class Boto3Driver():
         client = self.session().client('ec2')
         response = client.describe_instances()
         return response
+
+    def get_ec2_instance_list(self):
+        """
+        ec2インスタンスを一覧
+        boto3_driver.get_s3_bucket_list()
+        """
+        client = self.session().client('ec2')
+        response = client.describe_instances()
+        ec2_instance_list = [
+            {
+                'InstanceId': i['InstanceId'],
+                'Name': list(filter(lambda x: x['Key'] == 'Name', i['Tags']))[0]['Value'],
+                'StateName': i['State']['Name'],
+                'PrivateIpAddress': i['PrivateIpAddress'],
+                'InstanceType': i['InstanceType'],
+                'PlatformDetails': i['PlatformDetails'],
+                # 'Tags': i['Tags'],
+            }
+            for r in response['Reservations'] for i in r['Instances']
+        ]
+        return ec2_instance_list
     
     def get_ssm_parameters(self):
         """
